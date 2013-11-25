@@ -120,7 +120,7 @@ def OPT(S0, K, T, r, o, N, M, L):
 				if S[i][j] <= pi_star[i]:
 					Vh_temp[S[i-1][j]] = math.exp(-r*dt)*(K-S[i][j])
 				else:
-					Vh_temp[S[i-1][j]] = math.exp(-r*dt)*Vh[S[i][j])
+					Vh_temp[S[i-1][j]] = math.exp(-r*dt)*Vh[S[i][j]
 			Vh = Vh_temp
 	price = 0
 	for i in range(L):
