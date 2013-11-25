@@ -36,7 +36,7 @@ def LSM(S0, K, T, r, o, N, M, L):
 		Sj = S0
 		for j in range(N):
 			pj.append(Sj)
-			Sj = Sj*math.exp(random.gauss(u*dt, o*dt))
+			Sj = Sj*math.exp(random.gauss(u*dt, o*math.sqrt(dt)))
 		p.append(pj)
 	v = []
 	for i in range(M):
@@ -65,15 +65,78 @@ def LSM(S0, K, T, r, o, N, M, L):
 	pi_star.append(K)
 	price = 0
 	for i in range(L):
-		S = S0
+		S = [S0]
+		for j in range(N-1):
+			S.append(S[-1]*random.gauss(u*dt, o*math.sqrt(dt)))
+		index = range(N)
+		index.reverse()
 		pj = 0
-		for j in range(N):
-			if S < pi_star[j]:
-				if K > S:
-					pj = pj + (math.exp(-r*j*dt)*float(K-S))
-			S = S*math.exp(random.gauss(u*dt, o*dt))
+		for j in index:
+			if S[j] < pi_star[j]:
+				pj = K-S[j]
+			else:
+				pj = math.exp(-r*dt)*pj
 		price = price + (pj-price)/(i+1)
 	end = (time.clock()-start)
+	return price, end
+
+def OPT(S0, K, T, r, o, N, M, L):
+	start = time.clock()
+	dt = float(T)/N
+	u = r-(0.5*(o**2))
+	Sj = [S0]*M
+	S  = []
+	for i in range(N):
+		S.append(Sj)
+		Sj = []
+		for j in range(M):
+			Sj.append(S[i][j]*math.exp(random.gauss(u*dt, o*math.sqrt(dt))))
+	v = []
+	Vh = {}
+	for i in range(M):
+		if K-S[N-1][i] > 0:
+			Vh[S[N-2][i]] = math.exp(-r*dt)*(K-S[N-1][i])
+		else:
+			Vh[S[N-2][i]] = 0.0
+	pi_star = [0.0]*N
+	pi_star[N-1] = K
+	index = range(N-1)
+	index.reverse()
+	for i in index:
+		error = 0
+		for j in range(M):
+			if Vh[S[i][j]]-(K-S[i][j]) < 0:
+				error = error - (Vh[S[i][j]]-(K-S[i][j]))
+		sorted_values = sorted(S[i])
+		error2 = error
+		for Sj in sorted_values:
+			error2 = error2 + (Vh[Sj]-(K-S[j]))
+			if error2 < error:
+				error = error2
+				pi_star[i] = Sj
+		if i != 0:
+			Vh_temp = {}
+			for j in range(M):
+				if S[i][j] <= pi_star[i]:
+					Vh_temp[S[i-1][j]] = math.exp(-r*dt)*(K-S[i][j])
+				else:
+					Vh_temp[S[i-1][j]] = math.exp(-r*dt)*Vh[S[i][j])
+			Vh = Vh_temp
+	price = 0
+	for i in range(L):
+		S = [S0]
+		for j in range(N-1):
+			S.append(S[-1]*random.gauss(u*dt, o*math.sqrt(dt)))
+		index = range(N)
+		index.reverse()
+		pj = 0
+		for j in index:
+			if S[j] < pi_star[j]:
+				pj = K-S[j]
+			else:
+				pj = math.exp(-r*dt)*pj
+		price = price + (pj-price)/(i+1)
+	end = (time.clock-start)
 	return price, end
 
 S0 = 10
@@ -85,15 +148,28 @@ print "N = 100"
 print B(S0, K, T, r, o, 100)
 print "N = 1000"
 print B(S0, K, T, r, o, 1000)
-print "(N, M, L) = (50, 10000, 10000)"
+print "LSM(N, M, L) = (50, 10000, 10000)"
 price, end = LSM(S0, K, T, r, o, 50, 10000, 10000)
-print "price = "+str(price)
-print "time  = "+str(end)
-print "(N, M, L) = (100, 5000, 5000)"
+print "  price = "+str(price)
+print "  time  = "+str(end)
+print "LSM(N, M, L) = (100, 5000, 5000)"
 price, end = LSM(S0, K, T, r, o, 100, 5000, 5000)
-print "price = "+str(price)
-print "time  = "+str(end)
-print "(N, M, L) = (50, 5000, 50000)"
+print "  price = "+str(price)
+print "  time  = "+str(end)
+print "LSM(N, M, L) = (50, 5000, 50000)"
 price, end = LSM(S0, K, T, r, o, 50, 5000, 50000)
-print "price = "+str(price)
-print "time  = "+str(end)
+print "  price = "+str(price)
+print "  time  = "+str(end)
+print "OPT(N, M, L) = (50, 10000, 10000)"
+price, end = OPT(S0, K, T, r, o, 50, 10000, 10000)
+print "  price = "+str(price)
+print "  time  = "+str(end)
+print "OPT(N, M, L) = (100, 5000, 5000)"
+price, end = OPT(S0, K, T, r, o, 100, 5000, 5000)
+print "  price = "+str(price)
+print "  time  = "+str(end)
+print "OPT(N, M, L) = (50, 5000, 50000)"
+price, end = OPT(S0, K, T, r, o, 50, 5000, 50000)
+print "  price = "+str(price)
+print "  time  = "+str(end)
+
